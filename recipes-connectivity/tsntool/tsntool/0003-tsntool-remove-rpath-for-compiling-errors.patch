@@ -1,0 +1,40 @@
+From 9729852db462f577fd9add989bdda30c1d367469 Mon Sep 17 00:00:00 2001
+From: Zumeng Chen <zumeng.chen@windriver.com>
+Date: Thu, 4 Apr 2019 11:23:16 +0800
+Subject: [PATCH 1/1] tsntool: remove rpath for compiling errors
+
+WARNING: tsntool-1.0-r0 do_package_qa: QA Issue: package tsntool contains bad RPATH /buildarea1/zchen/build-18/wr18-ls20xx-0403-stdx/build/tmp-glibc/work/aarch64-wrs-linux/tsntool/1.0-r0/tsntool in file /buildarea1/zchen/build-18/wr18-ls20xx-0403-stdx/build/tmp-glibc/work/aarch64-wrs-linux/tsntool/1.0-r0/packages-split/tsntool/usr/bin/tsntool [rpaths]
+
+Also fix the parallel build issues by appending the dependency. 
+
+Upstream-Status: Inappropriate [ls1028 specific]
+
+Signed-off-by: Zumeng Chen <zumeng.chen@windriver.com>
+---
+ Makefile | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index da7e5c3..17ce8da 100644
+--- a/Makefile
++++ b/Makefile
+@@ -10,7 +10,6 @@ BIN_CFLAGS  += -Wall -Wextra -Wno-error=unused-parameter -Wno-error=sign-compare
+ BIN_CFLAGS  += $(shell pkg-config --cflags libnl-3.0 libnl-genl-3.0) -Iinclude
+ BIN_LDFLAGS += -ltsn $(shell pkg-config --libs libnl-3.0 libnl-genl-3.0) -lpthread -lm -lrt
+ BIN_LDFLAGS += -lreadline -ltermcap -L.
+-BIN_LDFLAGS += -Wl,-rpath,$(shell pwd)         # Compiled lib at local folder
+ 
+ BIN_SRC =
+ LIB_SRC =
+@@ -30,7 +29,7 @@ build: $(TSN_LIB) $(TSN_BIN)
+ $(TSN_LIB): $(LIB_DEPS)
+ 	$(CC) -shared $(LIB_OBJ) -o $@ $(LIB_LDFLAGS)
+ 
+-$(TSN_BIN): $(BIN_DEPS)
++$(TSN_BIN): $(TSN_LIB) $(BIN_DEPS)
+ 	$(CC) $(BIN_OBJ) -o $@ $(BIN_LDFLAGS)
+ 
+ lib/%.o: lib/%.c
+-- 
+2.20.1
+

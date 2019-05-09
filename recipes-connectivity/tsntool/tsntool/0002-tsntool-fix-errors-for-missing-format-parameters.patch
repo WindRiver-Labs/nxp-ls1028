@@ -1,0 +1,35 @@
+From d80f40139061a8491e156a99c870b643c6a11fc0 Mon Sep 17 00:00:00 2001
+From: Zumeng Chen <zumeng.chen@windriver.com>
+Date: Thu, 4 Apr 2019 09:40:00 +0800
+Subject: [PATCH 1/1] tsntool: fix errors for missing format parameters
+
+| main/readinput.c: In function 'readinput':
+| main/readinput.c:267:3: error: format not a string literal and no format arguments [-Werror=format-security]
+|    INSTRUCTION(output, instruction);
+|    ^~~~~~~~~~~
+
+Upstream-Status: Inappropriate [ls1028 specific]
+
+Signed-off-by: Zumeng Chen <zumeng.chen@windriver.com>
+---
+ main/readinput.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/main/readinput.c b/main/readinput.c
+index bd83988..83de6e1 100644
+--- a/main/readinput.c
++++ b/main/readinput.c
+@@ -263,8 +263,8 @@ char *readinput(const char *instruction, const char *tmpfile, FILE *output)
+ 	}
+ 
+ 	if (strcmp(editor, "NONE") == 0) {
+-		INSTRUCTION(output, "(finish input by Ctrl-D, add previous content from history by Ctrl-A)");
+-		INSTRUCTION(output, instruction);
++		INSTRUCTION(output, "%s", "(finish input by Ctrl-D, add previous content from history by Ctrl-A)");
++		INSTRUCTION(output, "%s", instruction);
+ 		INSTRUCTION(output, "\n");
+ 
+ 		multiline = 1;
+-- 
+2.7.4
+

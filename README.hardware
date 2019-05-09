@@ -1,0 +1,147 @@
+		NXP LS1028a Board Support Package
+
+
+Table of Contents
+=================
+
+1. Supported Boards
+2. Change History
+3. BSP Features
+4. BSP Notes
+
+
+1. Supported Boards
+===================
+
+This BSP supports the following boards:
+
+  + NXP LS1028A-RDB: CortexA72, SCH RevA1
+
+
+2. Change History
+=================
+
+  - 2019/05 (F11731): Wind River Linux 10.18 RCPL07, based on NXP bsp0.3
+
+
+3. BSP Features
+===============
+
+3.1 Supported Features
+----------------------
+
+The following BSP features are validated and supported on boards where
+the corresponding h/w features exist.
+
+  o General Platform
+	+ Freescale eDMA engine
+	+ Freescale QDMA engine
+	+ IOMMU
+	+ SMMUv3
+
+  o Bus
+        + CAN: FlexCAN
+	+ I2C: NXP On-Chip I2C controller
+	+ PCI-Express
+
+  o Network
+	+ Ethernet: freescale enetc with SR-IOV
+ 	+ TSN Switch
+
+  o Storage
+	+ NOR: 256MB nxp-fspi nor flash(mt35xu02g)
+	+ SDHC (SD slot)
+	+ SDHC (eMMC)
+	+ USB (3.0)
+
+  o User_Interface_Multimedia
+	+ Audio SAI
+	+ DP
+
+  o Graphic
+        + DRM
+	+ FB
+	+ galcore
+
+  o Misc Devices
+	+ RTC: pcf2127
+	+ SEC Engine: CAAM crypto driver
+	+ UART: 16550 compliant AMBA PL011 UART driver
+
+
+3.2 Unsupported Features
+========================
+
+Same as SDK, the following features are not supported and validated:
+  x M.2 Key B slot for SATA based SSD cards (Disabled by default from hardware)
+  x QSPI emulator (MT29F4G01ABBFD12) 
+  x Watchdog (Known issue)
+    https://community.nxp.com/message/1134998?commentID=1134998&et=watches.email.thread
+
+
+Notes for TSN, galcore, caam dma:
+These are known issues from SDK, there are the related QLINUX-10857 QLINUX-10747
+QLINUX-10979, so we just keep them as-is since they are still in unstable sataus
+For graphics, WRLinux has enabled the framebuffer text windows, enjoy it.
+
+4. BSP Notes
+============
+
+4.1 NXP LS1028a-rdb
+-------------------
+
+4.1.1 Validated Board Info
+--------------------------
+
+This BSP is only validated in following environment. If you use this BSP
+in a different environment it may possibly have some issues.
+
+	Processor:		LS1028AE Rev1.0 (0x870b0010)
+	Board:			LS1028AE Rev1.0-RDB, Version: A
+	BootLoader:		U-Boot
+	BootLoader Version:	U-Boot 2018.03
+
+Here is the board link:
+  https://www.nxp.com/support/developer-resources/software-development-tools/qoriq-developer-resources/ls1028a-reference-design-board:LS1028ARDB
+
+4.2 USB 3.0 ref clk errors from dmesg
+-------------------------------------
+
+From May 2018, dwc3 did a mainline commit(fe8abf33) to support clocks and resets
+for DWC3 core, and it seems ls1028a didn't follow it. And it seems there is no
+obvious harm to USB usage so far as x86 APIC series, so we leave these messages
+there for the future updating reminder and the customer warning.
+
+4.3 M.2 Sata interface disabled by default
+------------------------------------------
+
+According to the section 2.10 M.2 connectors in QorIQ LS1028A Reference Design
+Board Reference Manual(Revision C), the M.2 Key E connector (J18) and this M.2
+Key B connector (J20, Sata interface) multiplex the LYNX36 SerDes lane 3. They
+can not be enabled at the same time, and the M.2 J18 connector is the default
+one from hardware level. So this is why SATA is not validated. Please refer to
+the vendor for more information.
+
+4.4 CPU hotplug does not work
+-----------------------------
+
+Generally speaking, this kind issue should not be shown, so it reminders us
+there are a lot of thing needs to be done for this SoC. Here is the link for
+issue report:
+  https://community.nxp.com/message/1148206
+
+4.5 The DIP switches description is wrong 
+-----------------------------------------
+
+According to LS1028ARDBGSG.pdf, the boardloader can boot from Nor flash, emmc,
+and SD card. But seems it can only be hosted in NOR flash for now, there is an
+issue report linker:
+  https://community.nxp.com/message/1148207
+
+4.5 The basic situation on SDK v0.2&0.3
+---------------------------------------
+
+Based on the SDK v0.2 and v0.3, TSN, CAAM, watchdog, galcore does not work well
+and the maturity of both software and hardware is not good. Here is the website
+linker:
+  https://nxp.flexnetoperations.com/control/frse/product?entitlementId=507043727&lineNum=1&authContactId=127662237&authPartyId=142108587

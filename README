@@ -1,2 +1,335 @@
-This branch is intentionally empty so that it will be ignored when examined
-by a layer indexer.
+        NXP LS1028A-rdb Board Support Package
+
+1. About this document
+======================
+
+This document describes common and non-hardware specific information.
+Please refer to README.hardware for hardware specific information.
+
+Dependencies
+------------
+This layer depends on the oe-core version supplied with Wind River
+Linux and the wr-kernel layer.
+
+Maintenance
+-----------
+This layer is maintained by Wind River Systems, Inc.
+Contact <support@windriver.com> or your support representative for more
+information on submitting changes.
+
+Building the nxp-ls1028 layer
+---------------------------
+This layer and wr-kernel layer should be added to bblayers.conf. This
+is done automatically when using the Wind River configure wrapper.
+
+License
+-------
+Copyright (C) 2019 Wind River Systems, Inc.
+
+The right to copy, distribute or otherwise make use of this software may
+be licensed only pursuant to the terms of an applicable Wind River license
+agreement. No license to Wind River intellectual properly rights is granted
+herein. All rights not licensed by Wind River are reserved by Wind River.
+
+Source code included in tree for individual recipes is under the LICENSE
+stated in each recipe (.bb file) unless other stated.
+
+2. BSP Kernel and Distros
+=========================
+
+The following table summarizes the valid Wind River Linux distros for this BSP.
+'Y' in each content cell stands for supported; 'N' stands for not supported:
+
+  +--------------+-------------+-------------+-------------+
+  | valid/distro |   wrlinux   | wrlinux-cgl | wrlinux-ovp |
+  +--------------+-------------+-------------+-------------+
+  |    valid     |      Y      |      N      |      N      |
+  +--------------+-------------+-------------+-------------+
+
+For the supported kernel type for this BSP, please check the TARGET_SUPPORTED_KTYPES
+by running 'bitbake -e virtual/kernel | grep "^TARGET_SUPPORTED_KTYPES="'.
+
+Note: The preempt-rt ktype is not available for this BSP/Machine at this time.
+
+
+3. Board Specific Patches
+=========================
+To get a list of patches applied to the kernel specific to this BSP,
+along with patch descriptions, use git to see what changed on the default
+kernel (git whatchanged <kernel_type>..<bsp_name>). For example:
+
+	# cd tmp-glibc/work-shared/nxp-ls1028/kernel-source
+	# git whatchanged standard/base..
+
+
+4. Boot Instructions
+====================
+
+After having finished your project building, all images needed to boot your
+board with the following different ways are in this folder:
+
+  path_to_your_project/build/tmp-glibc/deploy/images/nxp-ls1028
+
+4.1 MMC/SD Boot
+---------------
+
+Suppose /dev/mmcblk0p1 is the rootfs partition in your mmc card, then you can
+use the following steps to boot the board:
+
+  # setenv bootargs console=ttyS0,115200 earlycon=uart8250,mmio,0x21c0500 \
+    root=/dev/mmcblk0p1 rootwait rw ip=dhcp default_hugepagesz=2m hugepagesz=2m\
+    hugepages=256 video=1920x1080-32@60 cma=256M
+
+  # sf probe && sf read $load_addr 0x900000 0x20000; hdp load $load_addr 0x2000;
+  Note: The above step is to load hdp firmware from flash to enable DP port.
+
+  # ext4load mmc 0:1 0x80080000 boot/Image; ext4load mmc 0:1 a0000000 boot/dtb;
+  # booti 0x80080000 - 0xa0000000
+
+4.2 NFS Root File System
+------------------------
+
+4.2.1 Prepare Kernel, DTB, NFS and TFTP servers
+-----------------------------------------------
+The files in the following example can be found in <buildprj>/tmp-glibc/deploy/images/nxp-ls1028
+and are copied to the export directory of the TFTP server.
+
+4.2.2 steps to boot WRLinux on ls1028
+-------------------------------------
+
+  # sf probe && sf read $load_addr 0x900000 0x20000; hdp load $load_addr 0x2000;
+
+  # tftpboot 0x80080000 Image; tftpboot a0000000 dtb;
+
+  # setenv bootargs console=ttymxc0,115200 root=/dev/nfs rw nfsroot=<nfs server>:<nfs rootfs> \
+		 ip=<target IP>::<gateway>:<netmask>::eth0:off default_hugepagesz=2m hugepagesz=2m \
+		 video=video=1920x1080-32@60 cma=256M
+  # booti 0x80080000 - 0xa0000000
+
+Note:
+  Currently, it seems only SPI nor flash can be the host for bootloader.
+
+5. Features
+===========
+
+5.1 DP
+------
+
+To enable DP output, the following two settings are mandatory:
+
+  1). Set video=1920x1080-32@60 in bootargs as one of kernel parameter.
+
+  2). Load dp firmware from u-boot before booting the Linux.
+      # sf probe && sf read $load_addr 0x900000 0x20000; hdp load $load_addr 0x2000;
+
+5.2 Audio
+---------
+
+There is an audio output port J34 in the front panel of the board, and plug in
+your earphone to hear the sound:
+
+5.2.1 Audio playback
+--------------------
+
+	# aplay /usr/share/sounds/alsa/Front_Center.wav
+
+
+5.3 CPU frequency
+------------------
+
+CPU frequency scaling allows the clock speed of the CPU to be changed on the fly.
+
+	# echo userspace > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
+Note: Make sure your expected scaling governors are available from your kernel
+      configs
+
+5.4 PTP by ptpd2
+----------------
+
+1) To configure one machine as master: [snip]
+	[host]# sudo ptpd2 -i eno1 -MV
+	ptpd2[9593].startup (notice)  PTPd version 2.3.2 starting
+	ptpd2[9593].startup (info)    Starting ptpd2 daemon with parameters:      ptpd2 -i eno1 -MV
+	ptpd2[9593].startup (info)    Checking configuration
+	ptpd2[9593].startup (info)    Configuration OK
+	ptpd2[9593].startup (info)    Successfully acquired lock on /var/run/ptpd2.lock
+	ptpd2[9593].startup (notice)  PTPd started successfully on eno1 using "masteronly" preset
+	ptpd2[9593].startup (info)    TimingService.PTP0: PTP service init
+	ptpd2[9593].eno1 (notice)    (lstn_init) Now in state: PTP_LISTENING lstn_init,  1
+	ptpd2[9593].eno1 (notice)    (lstn_init) TimingService.PTP0: elected best TimingService
+	ptpd2[9593].eno1 (info)      (lstn_init) TimingService.PTP0: acquired clock control
+	ptpd2[9593].eno1 (notice)    (mst) Now in state: PTP_MASTER, Best master: 54bf64fffe7f3f08(unknown)/1 (self)
+	ptpd2[9593].eno1 (info)      (mst) TimingService.PTP0: PTP service shutdown
+	ptpd2[9593].eno1 (info)      (___) TimingService: Timing domain shutdown complete
+	ptpd2[9593].eno1 (notice)    (___) Shutdown on close signal
+
+2) Another as slave: [snip]
+
+	root@nxp-ls1028:~# ptpd2 -i eth0 -sV --section:kp=0.32 --section:ki=0.05
+	ptpd2[701].startup (warning)   (___) Unknown configuration entry: section:kp - setting will be ignored
+	ptpd2[701].startup (warning)   (___) Unknown configuration entry: section:ki - setting will be ignored
+	ptpd2[701].startup (info)      (___) Configuration OK
+	ptpd2[701].startup (info)      (___) Successfully acquired lock on /var/run/ptpd2.lock
+	ptpd2[701].startup (notice)    (___) PTPDv2 started successfully on eth0 using "slaveonly" preset (PID 701)
+	ptpd2[701].startup (info)      (___) TimingService.PTP0: PTP service init
+	ptpd2[701].eth0 (info)      (init) Observed_drift loaded from kernel: 0 ppb
+	ptpd2[701].eth0 (notice)    (lstn_init) Now in state: PTP_LISTENING
+	ptpd2[701].eth0 (notice)    (lstn_init) TimingService.PTP0: elected best TimingService
+	ptpd2[701].eth0 (info)      (lstn_init) TimingService.PTP0: acquired clock control
+	ptpd2[701].eth0 (notice)    (slv) Now in state: PTP_SLAVE, Best master: 54bf64fffe7f3f08(unknown)/1 (IPv4:128.224.162.211)
+	ptpd2[701].eth0 (notice)    (slv) Received first Sync from Master
+	ptpd2[701].eth0 (critical)  (slv) Offset above 1 second. Clock will step.
+	ptpd2[701].eth0 (warning)   (slv) Stepped the system clock to: 05/07/19 06:47:53.126656311
+	ptpd2[701].eth0 (notice)    (lstn_reset) Now in state: PTP_LISTENING
+	ptpd2[701].eth0 (info)      (lstn_reset) New best master selected: 54bf64fffe7f3f08(unknown)/1
+	ptpd2[701].eth0 (notice)    (slv) Now in state: PTP_SLAVE, Best master: 54bf64fffe7f3f08(unknown)/1 (IPv4:128.224.162.211)
+	ptpd2[701].eth0 (notice)    (slv) Received first Sync from Master
+	 slv, 54bf64fffe7f3f08(unknown)/1,  0.000000000, -0.000002065,  0.000000000, -0.000004131, 0.000000000, S, 0.000000000, 0, 0.000000000, 0, 0, 0, -0.000004131,  0.000000000
+	 slv, 54bf64fffe7f3f08(unknown)/1,  0.000000000,  0.000000006,  0.000000000,  0.000004143, -2.065000000, S, 0.000000000, 0, 0.000000000, 0, 0, 0,  0.000004143,  0.000000000
+	 slv, 54bf64fffe7f3f08(unknown)/1,  0.000035081,  0.000000006,  0.000136182,  0.000004143, -2.059000000, D, 0.000000000, 0, 0.000000000, 0, 0, 0,  0.000004143,  0.000136182
+
+5.5 PCIe srio
+--------------
+
+  # ifconfig -a|grep eth|wc -l
+    7
+
+  # cd /sys/bus/pci/devices/0000:00:00.0
+  # echo 1 > sriov_numvfs
+    iommu: Adding device 0000:00:01.0 to group 9
+    fsl_enetc_vf 0000:00:01.0: enabling device (0000 -> 0002)
+    fsl_enetc_vf 0000:00:01.0 eth7: ENETC VF driver v0.9
+  # ifconfig -a|grep eth|wc -l
+    8
+  # ethtool -i eth0
+    driver: fsl_enetc
+    version:
+    firmware-version:
+    expansion-rom-version:
+    bus-info: 0000:00:00.0
+    supports-statistics: yes
+    supports-test: no
+    supports-eeprom-access: no
+    supports-register-dump: yes
+    supports-priv-flags: no
+
+  # ethtool -i eth7
+    driver: fsl_enetc_vf
+    version:
+    firmware-version:
+    expansion-rom-version:
+    bus-info: 0000:00:01.0
+    supports-statistics: yes
+    supports-test: no
+    supports-eeprom-access: no
+    supports-register-dump: yes
+    supports-priv-flags: no
+
+5.6 qdma
+--------
+
+  # echo  dma1chan0 > /sys/module/dmatest/parameters/channel
+  # echo 2000 > /sys/module/dmatest/parameters/timeout
+  # echo 100 > /sys/module/dmatest/parameters/iterations
+  # echo 1 > /sys/module/dmatest/parameters/run
+    dmatest: Started 1 threads using dma1chan0
+    dmatest: dma1chan0-copy0: summary 100 tests, 0 failures 8838 iops 75481 KB/s (0)
+
+5.7 ina220 & sa56004
+--------------------
+
+  # ls -l /sys/devices/platform/soc/2000000.i2c/i2c-0/i2c-4/4-004c/hwmon/hwmon1
+
+  # ls -l /sys/devices/platform/soc/2000000.i2c/i2c-0/i2c-3/3-0040/hwmon/hwmon
+    curr1_input
+    in0_input
+    in1_input
+    name
+    power
+    power1_input
+    shunt_resistor
+
+5.8 switch
+----------
+
+  # ip link add name switch type bridge
+  # ip link set switch up
+  # ifconfig
+  eth0      Link encap:Ethernet  HWaddr 00:04:9f:05:ef:f6
+            inet addr:128.224.162.145  Bcast:128.224.163.255  Mask:255.255.254.0
+            inet6 addr: fe80::204:9fff:fe05:eff6/64 Scope:Link
+            UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+            RX packets:4069 errors:0 dropped:0 overruns:0 frame:0
+            TX packets:347 errors:0 dropped:0 overruns:0 carrier:0
+            collisions:0 txqueuelen:1000
+            RX bytes:774780 (756.6 KiB)  TX bytes:51918 (50.7 KiB)
+
+  lo        Link encap:Local Loopback
+            inet addr:127.0.0.1  Mask:255.0.0.0
+            inet6 addr: ::1/128 Scope:Host
+            UP LOOPBACK RUNNING  MTU:65536  Metric:1
+            RX packets:140 errors:0 dropped:0 overruns:0 frame:0
+            TX packets:140 errors:0 dropped:0 overruns:0 carrier:0
+            collisions:0 txqueuelen:1000
+            RX bytes:8378 (8.1 KiB)  TX bytes:8378 (8.1 KiB)
+
+  switch    Link encap:Ethernet  HWaddr 1e:55:99:01:c8:01
+            inet6 addr: fe80::1c55:99ff:fe01:c801/64 Scope:Link
+            UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+            RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+            TX packets:5 errors:0 dropped:0 overruns:0 carrier:0
+            collisions:0 txqueuelen:1000
+            RX bytes:0 (0.0 B)  TX bytes:426 (426.0 B)
+
+  # ip link set eth2 master switch && ip link set eth2 up
+  switch: port 1(eth2) entered blocking state
+  switch: port 1(eth2) entered disabled state
+  device eth2 entered promiscuous mode
+  Vitesse VSC8514 1f8100000:10: attached PHY driver [Vitesse VSC8514] (mii_bus:phy_addr=1f8100000:10, irq=POLL)
+  IPv6: ADDRCONF(NETDEV_UP): eth2: link is not ready
+  8021q: adding VLAN 0 to HW filter on device eth2
+  # link set eth3 master switch && ip link set eth3 up
+  t eth5 up
+  ip link set eth6 master switch && ip lswitch: port 2(eth3) entered blocking state
+  switch: port 2(eth3) entered disabled state
+  device eth3 entered promiscuous mode
+  ink set eth6 up
+  Vitesse VSC8514 1f8100000:11: attached PHY driver [Vitesse VSC8514] (mii_bus:phy_addr=1f8100000:11, irq=POLL)
+  IPv6: ADDRCONF(NETDEV_UP): eth3: link is not ready
+  8021q: adding VLAN 0 to HW filter on device eth3
+  # ip link set eth4 master switch && ip link set eth4 up
+  switch: port 3(eth4) entered blocking state
+  switch: port 3(eth4) entered disabled state
+  device eth4 entered promiscuous mode
+  Vitesse VSC8514 1f8100000:12: attached PHY driver [Vitesse VSC8514] (mii_bus:phy_addr=1f8100000:12, irq=POLL)
+
+  IPv6: ADDRCONF(NETDEV_UP): eth4: link is not ready
+  8021q: adding VLAN 0 to HW filter on device eth4
+  # ip link set eth5 master switch && ip link set eth5 up
+  switch: port 4(eth5) entered blocking state
+  switch: port 4(eth5) entered disabled state
+  device eth5 entered promiscuous mode
+  Vitesse VSC8514 1f8100000:13: attached PHY driver [Vitesse VSC8514] (mii_bus:phy_addr=1f8100000:13, irq=POLL)
+  IPv6: ADDRCONF(NETDEV_UP): eth5: link is not ready
+  8021q: adding VLAN 0 to HW filter on device eth5
+
+  # ip link set eth6 master switch && ip link set eth6 up
+  Writes:  Total: 336323114  Max/Min: 0/0   Fail: 0
+  switch: port 5(eth6) entered blocking state
+  switch: port 5(eth6) entered disabled state
+  device eth6 entered promiscuous mode
+  Generic PHY fixed-0:01: attached PHY driver [Generic PHY] (mii_bus:phy_addr=fixed-0:01, irq=POLL)
+  IPv6: ADDRCONF(NETDEV_UP): eth6: link is not ready
+  8021q: adding VLAN 0 to HW filter on device eth6
+  switch: port 5(eth6) entered blocking state
+  switch: port 5(eth6) entered forwarding state
+  switch: port 5(eth6) entered disabled state
+
+  root@nxp-ls1028:~# brctl show switch
+  bridge name     bridge id               STP enabled     interfaces
+  switch          8000.c634cb969080       no              eth2
+                                                          eth3
+                                                          eth4
+                                                          eth5
+                                                          eth6
