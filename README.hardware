@@ -64,6 +64,8 @@ the corresponding h/w features exist.
 	+ galcore
 
   o Misc Devices
+	+ INA220
+	+ LM90
 	+ RTC: pcf2127
 	+ SEC Engine: CAAM crypto driver
 	+ UART: 16550 compliant AMBA PL011 UART driver
@@ -129,14 +131,6 @@ Generally speaking, this kind issue should not be shown, so it reminders us
 there are a lot of thing needs to be done for this SoC. Here is the link for
 issue report:
   https://community.nxp.com/message/1148206
-
-4.5 The DIP switches description is wrong 
------------------------------------------
-
-According to LS1028ARDBGSG.pdf, the boardloader can boot from Nor flash, emmc,
-and SD card. But seems it can only be hosted in NOR flash for now, there is an
-issue report linker:
-  https://community.nxp.com/message/1148207
 
 4.5 The basic situation on SDK v0.2&0.3
 ---------------------------------------

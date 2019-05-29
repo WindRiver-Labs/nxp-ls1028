@@ -289,9 +289,7 @@ Note: Make sure your expected scaling governors are available from your kernel
   Vitesse VSC8514 1f8100000:10: attached PHY driver [Vitesse VSC8514] (mii_bus:phy_addr=1f8100000:10, irq=POLL)
   IPv6: ADDRCONF(NETDEV_UP): eth2: link is not ready
   8021q: adding VLAN 0 to HW filter on device eth2
-  # link set eth3 master switch && ip link set eth3 up
-  t eth5 up
-  ip link set eth6 master switch && ip lswitch: port 2(eth3) entered blocking state
+  # ip link set eth3 master switch && ip link set eth3 up
   switch: port 2(eth3) entered disabled state
   device eth3 entered promiscuous mode
   ink set eth6 up
