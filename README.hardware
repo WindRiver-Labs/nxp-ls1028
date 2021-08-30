@@ -129,7 +129,6 @@ not infect the other TSN features on ENETC. And this will be fixed later.
 4.5 TSN SFI maxSDU feature on switch not supported
 --------------------------------------------------
 
-According to the LSDK19.09-REV 19.09_311219, the 802.1AS feature is not supported
-currently. When you follow the steps of LSDK19.09 user manual to set SFI maxSDU be
+When you follow the steps of LSDK19.09 user manual to set SFI maxSDU be
 200 on switch port, and ping with a size of 300 packet, it also pass through, while
 the expected result is the packet should not pass. This will be fixed later.
